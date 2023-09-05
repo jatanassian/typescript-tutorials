@@ -46,4 +46,45 @@ function addTodo(task: string): void {
 	console.log(`Added todo ${id}: ${task}`);
 }
 
-function cli(): void {}
+function cli(): void {
+	const command = process.argv[2];
+	const options = process.argv.slice(3);
+
+	switch (command) {
+		case '--help':
+			console.log('todo add TASK    add todo');
+			console.log('todo done ID     complete a todo');
+			console.log('todo list        list todo');
+			break;
+		case 'add':
+			if (options.length === 1) {
+				addTodo(options[0]);
+			} else {
+				console.log('Invalid number of options for command "add"');
+			}
+			break;
+		case 'done':
+			if (options.length === 1) {
+				const id = parseInt(options[0]);
+				if (isNaN(id)) {
+					console.log('Option must be a number for command "done"');
+				} else {
+					removeTodo(id);
+				}
+			} else {
+				console.log('Invalid number of options for command "done"');
+			}
+			break;
+		case 'list':
+			if (options.length === 0) {
+				listTodos();
+			} else {
+				console.log('Invalid number of options for command "list"');
+			}
+			break;
+		default:
+			console.log('Invalid command');
+	}
+}
+
+cli();
