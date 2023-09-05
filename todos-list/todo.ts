@@ -7,6 +7,11 @@ type Todo = {
 	task: string;
 };
 
+/**
+ * Gets todos arrays from JSON file
+ *
+ * @returns {Todo[]} - List of todos
+ */
 function getTodos(): Todo[] {
 	if (!fs.existsSync(todosPath)) {
 		return [];
@@ -15,15 +20,32 @@ function getTodos(): Todo[] {
 	return JSON.parse(data.toString()) as Todo[];
 }
 
+/**
+ * Lists todos in the terminal
+ *
+ * @returns {void}
+ */
 function listTodos(): void {
 	const todos: Todo[] = getTodos();
 	todos.forEach(todo => console.log(`${todo.id}: ${todo.task}`));
 }
 
+/**
+ * Saves todos in a JSON file
+ *
+ * @param {Todo[]} todos - List of todos
+ * @return {void}
+ */
 function saveTodos(todos: Todo[]): void {
 	fs.writeFileSync(todosPath, JSON.stringify(todos));
 }
 
+/**
+ * Removes todo from list
+ *
+ * @param {number} id - Todo ID
+ * @return {void}
+ */
 function removeTodo(id: number): void {
 	const todos: Todo[] = getTodos();
 	const index = todos.findIndex(todo => todo.id === id);
@@ -37,6 +59,12 @@ function removeTodo(id: number): void {
 	console.log(`Removed todo ${removedTodo.id}: ${removedTodo.task}`);
 }
 
+/**
+ * Generates an ID and adds todo in the list
+ *
+ * @param {string} task - Todo description
+ * @return {void}
+ */
 function addTodo(task: string): void {
 	const todos: Todo[] = getTodos();
 
@@ -46,7 +74,21 @@ function addTodo(task: string): void {
 	console.log(`Added todo ${id}: ${task}`);
 }
 
-function cli(): void {
+/**
+ * Outputs error message in the terminal
+ *
+ * @param {string} command - Command type
+ */
+function cliInvalidOption(command: string): void {
+	console.error(`Invalid number of options for command ${command}`);
+}
+
+/**
+ * Handle the commands typed by the user in the terminal
+ *
+ * @return {void}
+ */
+function cliHandler(): void {
 	const command = process.argv[2];
 	const options = process.argv.slice(3);
 
@@ -60,7 +102,7 @@ function cli(): void {
 			if (options.length === 1) {
 				addTodo(options[0]);
 			} else {
-				console.log('Invalid number of options for command "add"');
+				cliInvalidOption('add');
 			}
 			break;
 		case 'done':
@@ -72,19 +114,19 @@ function cli(): void {
 					removeTodo(id);
 				}
 			} else {
-				console.log('Invalid number of options for command "done"');
+				cliInvalidOption('done');
 			}
 			break;
 		case 'list':
 			if (options.length === 0) {
 				listTodos();
 			} else {
-				console.log('Invalid number of options for command "list"');
+				cliInvalidOption('list');
 			}
 			break;
 		default:
-			console.log('Invalid command');
+			console.error('Invalid command');
 	}
 }
 
-cli();
+cliHandler();
