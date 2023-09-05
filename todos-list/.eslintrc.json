@@ -19,7 +19,7 @@
 	"parserOptions": {
 		"ecmaVersion": "latest",
 		"sourceType": "module",
-		"project": ["tsconfig.json"]
+		"project": ["todos-list/tsconfig.json"]
 	},
 	"ignorePatterns": ["*.test.ts", "*.js"],
 	"rules": {
@@ -42,30 +42,6 @@
 			"error",
 			{
 				"prefer": "type-imports"
-			}
-		],
-		"import/order": [
-			"error",
-			{
-				"groups": [
-					"builtin",
-					"external",
-					"parent",
-					"sibling",
-					"index",
-					"object",
-					"type"
-				],
-				"pathGroups": [
-					{
-						"pattern": "@/**/**",
-						"group": "parent",
-						"position": "before"
-					}
-				],
-				"alphabetize": {
-					"order": "asc"
-				}
 			}
 		]
 	}

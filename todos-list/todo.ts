@@ -2,10 +2,10 @@ import fs from 'fs';
 
 const todosPath = 'todos.json';
 
-type Todo = {
+interface Todo {
 	id: number;
 	task: string;
-};
+}
 
 /**
  * Gets todos arrays from JSON file
