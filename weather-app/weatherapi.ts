@@ -28,3 +28,73 @@ const weatherCodes: Record<number, string> = {
 	96: 'Thunderstorm with slight hail',
 	99: 'Thunderstorm with heavy hail',
 };
+
+interface CurrentWeatherApiResponse {
+	temperature: string;
+	windspeed: number;
+	winddirection: number;
+	weathercode: number;
+	is_day: number;
+	time: string;
+}
+
+export interface Temperature {
+	value: number;
+	unit: string;
+}
+
+const formatTemperature = (temp: Temperature): string =>
+	`${temp.value}${temp.unit}`;
+
+export interface Wind {
+	speed: number;
+	direction: number;
+	unit: string;
+}
+
+const formatWind = (wind: Wind): string => `${wind.speed}${wind.unit}`;
+
+export class CurrentWeather {
+	temperature: Temperature;
+	wind: Wind;
+	weathercode: number;
+	daytime: boolean;
+	time: string;
+
+	constructor(apiResponse: CurrentWeatherApiResponse) {
+		this.temperature = {
+			value: parseInt(apiResponse.temperature),
+			unit: 'C',
+		};
+
+		this.wind = {
+			speed: apiResponse.windspeed,
+			direction: apiResponse.winddirection,
+			unit: 'kmh',
+		};
+
+		this.weathercode = apiResponse.weathercode;
+		this.daytime = apiResponse.is_day === 1;
+		this.time = apiResponse.time;
+	}
+
+	condition(): string {
+		return weatherCodes[this.weathercode];
+	}
+
+	format(): string {
+		const descriptionLength = 16;
+
+		const temp = 'Temperature'.padStart(descriptionLength, ' ');
+		const windSpeed = 'Wind Speed'.padStart(descriptionLength, ' ');
+		const condition = 'Condition'.padStart(descriptionLength, ' ');
+
+		const formatted: string[] = [];
+
+		formatted.push(`${temp}: ${formatTemperature(this.temperature)}`);
+		formatted.push(`${windSpeed}: ${formatWind(this.wind)}`);
+		formatted.push(`${condition}: ${this.condition()}`);
+
+		return formatted.join('\n');
+	}
+}

@@ -2,6 +2,7 @@ import { fetchLocationData } from './location';
 import type { LocationInfo } from './location';
 
 const GEOCODE_API_URL = 'https://geocode.maps.co/search';
+const WEATHER_API_URL = 'https://api.open-meteo/v1/forecast';
 
 /**
  *
