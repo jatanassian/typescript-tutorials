@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const weatherCodes: Record<number, string> = {
 	0: 'Clear sky',
 	1: 'Mainly clear',
@@ -96,5 +98,37 @@ export class CurrentWeather {
 		formatted.push(`${condition}: ${this.condition()}`);
 
 		return formatted.join('\n');
+	}
+}
+
+export async function fetchWeatherData(
+	url: string,
+	lat: string,
+	long: string
+): Promise<CurrentWeather> {
+	const options = {
+		method: 'GET',
+		url,
+		params: {
+			latitude: lat,
+			longitude: long,
+			hourly: 'temperature_2m',
+			temperature_unit: 'celsius',
+			windspeed_unit: 'kmh',
+			current_weather: true,
+		},
+	};
+
+	const response = await axios.request(options);
+
+	if (response.status === 200) {
+		if (response.data?.current_weather !== undefined) {
+			const res = response.data.current_weather as CurrentWeatherApiResponse;
+			return new CurrentWeather(res);
+		} else {
+			throw new Error('Received invalid API response');
+		}
+	} else {
+		throw new Error('Failed to fetch weather data');
 	}
 }
