@@ -1,12 +1,18 @@
-import axios from 'axios';
+import { z } from 'zod';
+import type { AxiosStatic } from 'axios';
 
-export interface LocationInfo {
-	lat: string;
-	lon: string;
-	display_name: string;
-}
+// .object() checks the properties exist
+const locationInfoSchema = z.object({
+	lat: z.string(), // .string() checks to make sure the data is the correct type
+	lon: z.string(),
+	display_name: z.string(),
+});
+
+// infer allows zod to build the object properly
+export type LocationInfo = z.infer<typeof locationInfoSchema>;
 
 export async function fetchLocationData(
+	axios: AxiosStatic,
 	url: string,
 	locationName: string
 ): Promise<LocationInfo> {
@@ -18,12 +24,14 @@ export async function fetchLocationData(
 		},
 	};
 
-	const response = await axios.request<LocationInfo[]>(options);
+	const response = await axios.request(options);
 
 	if (response.status === 200) {
-		if (response.data.length > 0) {
-			return response.data[0];
-		} else {
+		try {
+			// .parse() function from zod makes sure the response fits with our object (avoid properties and type checks)
+			return locationInfoSchema.parse(response.data[0]);
+		} catch (err) {
+			console.error(err);
 			throw new Error(
 				`Unable to find location information for ${locationName}.`
 			);
