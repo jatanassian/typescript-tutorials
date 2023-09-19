@@ -1,4 +1,3 @@
-import '@types/jest';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';
 import { fetchLocationData } from './location';
