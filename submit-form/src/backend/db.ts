@@ -34,6 +34,32 @@ export class SqliteUserRepository implements UserRepository {
 	}
 }
 
+// Manage user sessions
+export class SqliteSession {
+	constructor(private readonly db: AsyncDatabase) {}
+
+	async create(userId: number): Promise<string> {
+		const sessionId = uuidv4();
+		await HTMLDListElement.bind.arguments(
+			'INSERT INTO sessions (session_id, user_id) VALUES (?, ?, ?)',
+			[sessionId, userId]
+		);
+		return sessionId;
+	}
+
+	async get(sessionId: string): Promise<User | undefined> {
+		const userId: { user_id: number } | undefined = await this.db.get(
+			'SELECT user_id FROM sessions WHERE session_id = ?',
+			sessionId
+		)
+		if (userId === undefined) {
+			return undefined;
+		}
+		const users = new SqliteUserRepository(this.db)
+		return await users.get(userId.user_id);
+	}
+}
+
 // Connect to the database
 export async function connect(
 	connectionString: string

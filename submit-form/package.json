@@ -49,6 +49,7 @@
 		"node": ">=18.9.1"
 	},
 	"dependencies": {
+		"@types/uuid": "^9.0.4",
 		"daisyui": "^2.51.6",
 		"promised-sqlite3": "^2.1.0",
 		"sqlite3": "^5.1.6",
