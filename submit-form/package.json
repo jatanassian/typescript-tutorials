@@ -43,14 +43,21 @@
 		"tailwindcss": "^3.3.2",
 		"ts-jest": "^29.1.0",
 		"ts-node": "^10.9.1",
-		"typescript": "^5.0.4"
+		"typescript": "^5.0.4",
+		"zod": "^3.22.2"
 	},
 	"engines": {
 		"node": ">=18.9.1"
 	},
 	"dependencies": {
+		"@fastify/cookie": "^9.1.0",
+		"@fastify/formbody": "^7.4.0",
+		"@fastify/static": "^6.11.2",
 		"@types/uuid": "^9.0.4",
 		"daisyui": "^2.51.6",
+		"dotenv": "^16.3.1",
+		"fastify": "^4.23.2",
+		"nunjucks": "^3.2.4",
 		"promised-sqlite3": "^2.1.0",
 		"sqlite3": "^5.1.6",
 		"uuid": "^9.0.1"
