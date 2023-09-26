@@ -1,5 +1,5 @@
 import path from 'path';
-import cookie from '@fastify/cookie'
+import cookie from '@fastify/cookie';
 import formBody from '@fastify/formbody';
 import staticFiles from '@fastify/static';
 import dotenv from 'dotenv';
@@ -18,26 +18,42 @@ if (cookieSecret === undefined) {
 	process.exit(1);
 }
 
-const template = new nunjucks.Environment(new nunjucks.FileSystemLoader('ssrc/backend/templates'));
+const templates = new nunjucks.Environment(
+	new nunjucks.FileSystemLoader('src/backend/templates')
+);
 const USERS_DB = './users.sqlite';
 
 const fastify = Fastify({
-	logger: true
-})
+	logger: true,
+});
 
 {
 	fastify.register(formBody);
 	fastify.register(cookie, {
-		secret: cookieSecret
+		secret: cookieSecret,
 	});
 	fastify.register(staticFiles, {
-		root: path.join(__dirname, '../../dist')
-	})
+		root: path.join(__dirname, '../../dist'),
+	});
 }
 
 fastify.get('/', async (request, reply) => {
-	await reply.send('hello');
-})
+	await reply.redirect('/signin');
+});
+
+fastify.get('/signup', async (request, reply) => {
+	const rendered = templates.render('signup.njk', { environment });
+	return await reply
+		.header('Content-Type', 'text/html; charset=utf-8')
+		.send(rendered);
+});
+
+fastify.get('/signin', async (request, reply) => {
+	const rendered = templates.render('signin.njk', { environment });
+	return await reply
+		.header('Content-Type', 'text/html; charset=utf-8')
+		.send(rendered);
+});
 
 const start = async (): Promise<void> => {
 	try {
@@ -46,6 +62,8 @@ const start = async (): Promise<void> => {
 		await fastify.listen({ port: 8089 });
 	} catch (error) {
 		fastify.log.error(error);
-		process.exit(1)
+		process.exit(1);
 	}
-}
+};
+
+start();
