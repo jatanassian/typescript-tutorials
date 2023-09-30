@@ -8,6 +8,7 @@ import nunjucks from 'nunjucks';
 import { z } from 'zod';
 
 import { connect, newDb, SqliteSession, SqliteUserRepository } from './db';
+import { hashPasssword } from './auth';
 
 dotenv.config();
 
@@ -72,14 +73,14 @@ fastify.post('/account/signup', async (request, reply) => {
 	const db = await connect(USERS_DB);
 	const userRepository = new SqliteUserRepository(db);
 
-	// TODO: hash password
+	const hashedPassword = await hashPasssword(requestData.password);
 
 	try {
 		const newUser = {
 			...requestData,
 			id: 0,
 			agreedToTerms: true,
-			hashedPassword: 'FIXME'
+			hashedPassword
 		};
 
 		const user = await userRepository.create(newUser);
