@@ -8,8 +8,11 @@ import nunjucks from 'nunjucks';
 import { z } from 'zod';
 
 import { connect, newDb, SqliteSession, SqliteUserRepository } from './db';
-import { hashPasssword } from './auth';
+import { comparePassword, hashPasssword } from './auth';
 
+/******************************
+ * Config
+ ******************************/
 dotenv.config();
 
 const environment = process.env.NODE_ENV;
@@ -28,6 +31,10 @@ const fastify = Fastify({
 	logger: true,
 });
 
+/******************************
+ * Schemas
+ ******************************/
+
 const accountCreateRequestSchema = z.object({
 	email: z.string(),
 	password: z.string(),
@@ -35,6 +42,13 @@ const accountCreateRequestSchema = z.object({
 });
 
 type AccountCreateRequest = z.infer<typeof accountCreateRequestSchema>;
+
+const accountLoginRequestSchema = z.object({
+	email: z.string(),
+	password: z.string(),
+});
+
+type AccountLoginRequest = z.infer<typeof accountLoginRequestSchema>;
 
 {
 	fastify.register(formBody);
@@ -46,10 +60,58 @@ type AccountCreateRequest = z.infer<typeof accountCreateRequestSchema>;
 	});
 }
 
+/******************************
+ * Routes
+ ******************************/
+
+// Homepage
 fastify.get('/', async (request, reply) => {
 	await reply.redirect('/signin');
 });
 
+// Signin
+fastify.get('/signin', async (request, reply) => {
+	const rendered = templates.render('signin.njk', { environment });
+	return await reply
+		.header('Content-Type', 'text/html; charset=utf-8')
+		.send(rendered);
+});
+
+fastify.post('/account/signin', async (request, reply) => {
+	let requestData: AccountLoginRequest;
+
+	try {
+		requestData = accountCreateRequestSchema.parse(request.body);
+	} catch (error) {
+		return await reply.redirect('signup');
+	}
+
+	const db = await connect(USERS_DB);
+	const userRepository = new SqliteUserRepository(db);
+
+	try {
+		const user = await userRepository.findByEmail(requestData.email);
+		// If user doesn't exist
+		if (user === undefined) {
+			// TODO: show error message
+			return await reply.redirect('/signin');
+		}
+
+		// If wrong password
+		const passwordMatches = await comparePassword(requestData.password, user.hashedPassword);
+		if (!passwordMatches) {
+			// TODO: show error message
+			return await reply.redirect('/signin');
+		}
+
+		return await reply.redirect('/welcome');
+	} catch (error) {
+		// TODO: show error message
+		return await reply.redirect('/signin');
+	}
+});
+
+// Signup
 fastify.get('/signup', async (request, reply) => {
 	const rendered = templates.render('signup.njk', { environment });
 	return await reply
@@ -92,12 +154,9 @@ fastify.post('/account/signup', async (request, reply) => {
 	}
 });
 
-fastify.get('/signin', async (request, reply) => {
-	const rendered = templates.render('signin.njk', { environment });
-	return await reply
-		.header('Content-Type', 'text/html; charset=utf-8')
-		.send(rendered);
-});
+/******************************
+ * Run server
+ ******************************/
 
 const start = async (): Promise<void> => {
 	try {
