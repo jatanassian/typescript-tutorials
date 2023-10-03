@@ -9,6 +9,7 @@ import { z } from 'zod';
 
 import { connect, newDb, SqliteSession, SqliteUserRepository } from './db';
 import { comparePassword, hashPasssword } from './auth';
+import { clearFlashCookie, FLASH_MSG_COOKIE } from './flash';
 import type { FastifyReply } from 'fastify/types/reply';
 import type { FastifyRequest } from 'fastify/types/request';
 
@@ -59,6 +60,7 @@ type AccountLoginRequest = z.infer<typeof accountLoginRequestSchema>;
 	fastify.register(cookie, {
 		secret: cookieSecret,
 	});
+	fastify.register(clearFlashCookie);
 	fastify.register(staticFiles, {
 		root: path.join(__dirname, '../../dist'),
 	});
@@ -67,6 +69,14 @@ type AccountLoginRequest = z.infer<typeof accountLoginRequestSchema>;
 /******************************
  * Helpers
  ******************************/
+
+function setFlashCookie(reply: FastifyReply, msg: string): void {
+	reply.setCookie(FLASH_MSG_COOKIE, msg, { path: '/' });
+}
+
+function readFlashCookie(request: FastifyRequest): string | undefined {
+	return request.cookies[FLASH_MSG_COOKIE];
+}
 
 function setSessionCookie(reply: FastifyReply, sessionId: string): void {
 	reply.setCookie(SESSION_COOKIE, sessionId, { path: '/' });
