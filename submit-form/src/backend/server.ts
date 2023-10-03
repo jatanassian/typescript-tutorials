@@ -9,11 +9,15 @@ import { z } from 'zod';
 
 import { connect, newDb, SqliteSession, SqliteUserRepository } from './db';
 import { comparePassword, hashPasssword } from './auth';
+import type { FastifyReply } from 'fastify/types/reply';
+import type { FastifyRequest } from 'fastify/types/request';
 
 /******************************
  * Config
  ******************************/
 dotenv.config();
+
+const SESSION_COOKIE = 'SESSION_ID';
 
 const environment = process.env.NODE_ENV;
 const cookieSecret = process.env.COOKIE_SECRET;
@@ -38,7 +42,7 @@ const fastify = Fastify({
 const accountCreateRequestSchema = z.object({
 	email: z.string(),
 	password: z.string(),
-	agreedToTerms: z.string().optional()
+	agreedToTerms: z.string().optional(),
 });
 
 type AccountCreateRequest = z.infer<typeof accountCreateRequestSchema>;
@@ -58,6 +62,18 @@ type AccountLoginRequest = z.infer<typeof accountLoginRequestSchema>;
 	fastify.register(staticFiles, {
 		root: path.join(__dirname, '../../dist'),
 	});
+}
+
+/******************************
+ * Helpers
+ ******************************/
+
+function setSessionCookie(reply: FastifyReply, sessionId: string): void {
+	reply.setCookie(SESSION_COOKIE, sessionId, { path: '/' });
+}
+
+function readSessionCookie(request: FastifyRequest): string | undefined {
+	return request.cookies[SESSION_COOKIE];
 }
 
 /******************************
@@ -98,11 +114,19 @@ fastify.post('/account/signin', async (request, reply) => {
 		}
 
 		// If wrong password
-		const passwordMatches = await comparePassword(requestData.password, user.hashedPassword);
+		const passwordMatches = await comparePassword(
+			requestData.password,
+			user.hashedPassword
+		);
 		if (!passwordMatches) {
 			// TODO: show error message
 			return await reply.redirect('/signin');
 		}
+
+		// Create session and add it to cookie
+		const sessions = new SqliteSession(db);
+		const sessionId = await sessions.create(user.id);
+		setSessionCookie(reply, sessionId);
 
 		return await reply.redirect('/welcome');
 	} catch (error) {
@@ -142,11 +166,16 @@ fastify.post('/account/signup', async (request, reply) => {
 			...requestData,
 			id: 0,
 			agreedToTerms: true,
-			hashedPassword
+			hashedPassword,
 		};
 
 		const user = await userRepository.create(newUser);
-		console.log(user);
+
+		// Create session and add it to cookie
+		const sessions = new SqliteSession(db);
+		const sessionId = await sessions.create(user.id);
+		setSessionCookie(reply, sessionId);
+
 		return await reply.redirect('welcome');
 	} catch (error) {
 		// TODO: show error message
