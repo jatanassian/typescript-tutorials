@@ -97,7 +97,11 @@ fastify.get('/', async (request, reply) => {
 
 // Signin
 fastify.get('/signin', async (request, reply) => {
-	const rendered = templates.render('signin.njk', { environment });
+	const serverMsg = readFlashCookie(request);
+	const rendered = templates.render('signin.njk', {
+		server_msg: serverMsg,
+		environment,
+	});
 	return await reply
 		.header('Content-Type', 'text/html; charset=utf-8')
 		.send(rendered);
@@ -147,7 +151,11 @@ fastify.post('/account/signin', async (request, reply) => {
 
 // Signup
 fastify.get('/signup', async (request, reply) => {
-	const rendered = templates.render('signup.njk', { environment });
+	const serverMsg = readFlashCookie(request);
+	const rendered = templates.render('signup.njk', {
+		server_msg: serverMsg,
+		environment,
+	});
 	return await reply
 		.header('Content-Type', 'text/html; charset=utf-8')
 		.send(rendered);
