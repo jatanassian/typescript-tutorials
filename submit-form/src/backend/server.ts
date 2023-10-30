@@ -12,6 +12,8 @@ import { comparePassword, hashPasssword } from './auth';
 import { clearFlashCookie, FLASH_MSG_COOKIE } from './flash';
 import type { FastifyReply } from 'fastify/types/reply';
 import type { FastifyRequest } from 'fastify/types/request';
+import { checkUsername } from '../shared/username-rules';
+import { checkComplexity } from '../shared/password-rules';
 
 /******************************
  * Config
@@ -172,6 +174,20 @@ fastify.post('/account/signup', async (request, reply) => {
 
 	if (requestData.agreedToTerms !== 'on') {
 		return await reply.redirect('signup');
+	}
+
+	const usernameFailures = checkUsername(requestData.email);
+	if (usernameFailures.length) {
+		const formattedErrors = usernameFailures.join('<br>');
+		setFlashCookie(reply, formattedErrors);
+		return await reply.redirect('/signup');
+	}
+
+	const passwordFailures = checkComplexity(requestData.password);
+	if (passwordFailures.length) {
+		const formattedErrors = passwordFailures.join('<br>');
+		setFlashCookie(reply, formattedErrors);
+		return await reply.redirect('/signup');
 	}
 
 	const db = await connect(USERS_DB);
