@@ -97,6 +97,36 @@ fastify.get('/', async (request, reply) => {
 	await reply.redirect('/signin');
 });
 
+// Welcome
+fastify.get('/welcome', async (request, reply) => {
+	const sessionId = readSessionCookie(request);
+
+	if (!sessionId) {
+		setFlashCookie(reply, 'Please sign in to continue.');
+		return await reply.redirect('/login');
+	}
+
+	const db = await connect(USERS_DB);
+	const sessions = new SqliteSession(db);
+	const user = await sessions.get(sessionId);
+
+	if (!user) {
+		setFlashCookie(
+			reply,
+			'Your session has expired. Please sign in to continue.'
+		);
+		return await reply.redirect('signin');
+	}
+
+	const rendered = templates.render('welcome.nkj', {
+		environment,
+		email: user.email,
+	});
+	return await reply
+		.header('Content-Type', 'text/html; charset=utf-8')
+		.send(rendered);
+});
+
 // Signin
 fastify.get('/signin', async (request, reply) => {
 	const serverMsg = readFlashCookie(request);
