@@ -1,12 +1,16 @@
 import { AsyncDatabase } from 'promised-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
-import type { HashedPassword } from './auth';
+import { HashedPassword } from './auth';
 
 export interface User {
 	id: number;
 	email: string;
 	hashedPassword: HashedPassword;
 	agreedToTerms: boolean;
+}
+
+interface UserDto extends Omit<User, 'hashedPassword'> {
+	hashedPassword: string;
 }
 
 export interface UserRepository {
@@ -20,18 +24,39 @@ export class SqliteUserRepository implements UserRepository {
 
 	async create(user: User): Promise<User> {
 		const userId: { id: number } = await this.db.get(
-			'INSERT INTO users (email, password, agreedToTerms) VALUES (?, ?, ?) RETURNING id',
+			'INSERT INTO users (email, hashedPassword, agreedToTerms) VALUES (?, ?, ?) RETURNING id',
 			[user.email, user.hashedPassword.hashed, user.agreedToTerms]
 		);
 		return { ...user, id: userId.id };
 	}
 
 	async findByEmail(email: string): Promise<User | undefined> {
-		return await this.db.get('SELECT * FROM users WHERE email = ?', email);
+		const userId: { id: number } | undefined = await this.db.get(
+			'SELECT id FROM users WHERE email = ?',
+			email
+		);
+
+		if (userId !== undefined) {
+			return await this.get(userId.id);
+		}
+
+		return undefined;
 	}
 
 	async get(userId: number): Promise<User | undefined> {
-		return await this.db.get('SELECT * FROM users WHERE id = ?', userId);
+		const user: UserDto | undefined = await this.db.get(
+			'SELECT * FROM users WHERE id = ?',
+			userId
+		);
+
+		if (user !== undefined) {
+			return {
+				...user,
+				hashedPassword: new HashedPassword(user.hashedPassword),
+			};
+		}
+
+		return undefined;
 	}
 }
 
@@ -52,11 +77,11 @@ export class SqliteSession {
 		const userId: { user_id: number } | undefined = await this.db.get(
 			'SELECT user_id FROM sessions WHERE session_id = ?',
 			sessionId
-		)
+		);
 		if (userId === undefined) {
 			return undefined;
 		}
-		const users = new SqliteUserRepository(this.db)
+		const users = new SqliteUserRepository(this.db);
 		return await users.get(userId.user_id);
 	}
 }
@@ -74,7 +99,7 @@ export async function newDb(db: AsyncDatabase): Promise<void> {
 		CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY,
 			email TEXT UNIQUE NOT NULL,
-			password TEXT NOT NULL,
+			hashedPassword TEXT NOT NULL,
 			agreedToTerms BOOLEAN NOT NULL
 		);
 
